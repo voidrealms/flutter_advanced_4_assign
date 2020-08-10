@@ -1,23 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:simple_permissions/simple_permissions.dart';
 
-
-Permission permissionFromString(String value) {
-  Permission permission;
-  for(Permission item in Permission.values) {
-    if(item.toString() == value) {
-      permission = item;
-      break;
-    }
-  }
-  return permission;
-}
-
+import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
-
-  await SimplePermissions.requestPermission(permissionFromString('Permission.WriteExternalStorage'));
   runApp(new MaterialApp(
     home: new MyApp(),
   ));
@@ -29,23 +15,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _State extends State<MyApp> {
-  
-  Permission permission;
-  String status;
 
+  String status = "";
 
   @override
   void initState() {
-    permission = permissionFromString('Permission.WriteExternalStorage');
-
-    checkPermission();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      // try asking for permission on first app launch
+      askForPermission(Permission.storage);
+    });
   }
 
-  checkPermission() async {
-    bool res = await SimplePermissions.checkPermission(permission);
-    setState(() {
-      status = '${permission.toString()} = ${res.toString()}';
-    });
+  Future<void> askForPermission(Permission permission) async {
+    var permStatus = await permission.status;
+    if (!permStatus.isGranted)
+      permStatus = await permission.request();
+    setState(() => status = '${permission.toString()} = $permStatus');
   }
 
   @override
